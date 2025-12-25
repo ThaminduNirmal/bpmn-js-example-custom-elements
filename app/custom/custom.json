@@ -1,0 +1,21 @@
+  {
+  "name": "CustomBPMN",
+  "uri": "http://example.com/custom-bpmn",
+  "prefix": "custom",
+  "xml": {
+    "tagAlias": "lowerCase"
+  },
+  "types": [
+    {
+      "name": "AITask",
+      "extends": [ "bpmn:Task" ],
+      "properties": [
+        {
+          "name": "isAI",
+          "isAttr": true,
+          "type": "Boolean"
+        }
+      ]
+    }
+  ]
+}
