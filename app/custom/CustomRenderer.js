@@ -2,8 +2,6 @@ import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
 
 import {
   append as svgAppend,
-  attr as svgAttr,
-  classes as svgClasses,
   create as svgCreate
 } from 'tiny-svg';
 
@@ -16,14 +14,7 @@ import {
   getBusinessObject
 } from 'bpmn-js/lib/util/ModelUtil';
 
-import { isNil } from 'min-dash';
-
-const HIGH_PRIORITY = 1500,
-      TASK_BORDER_RADIUS = 2,
-      COLOR_GREEN = '#52B415',
-      COLOR_YELLOW = '#ffc800',
-      COLOR_RED = '#cc0000';
-
+const HIGH_PRIORITY = 1500;
 
 export default class CustomRenderer extends BaseRenderer {
   constructor(eventBus, bpmnRenderer) {
@@ -33,86 +24,50 @@ export default class CustomRenderer extends BaseRenderer {
   }
 
   canRender(element) {
-
-    // ignore labels
-    return !element.labelTarget;
+    // 1. CHECK FOR THE FLAG HERE
+    // We only render if it is a Task AND has 'isAI' set to true
+    return is(element, 'bpmn:Task') && element.businessObject.isAI;
   }
 
   drawShape(parentNode, element) {
     const shape = this.bpmnRenderer.drawShape(parentNode, element);
 
-    const suitabilityScore = this.getSuitabilityScore(element);
+    // 2. APPLY CUSTOM STYLING
+    // Since we know it has isAI=true, we color it purple
+    const rect = drawRect(parentNode, 100, 80, 10, '#E6E6FA'); // Light purple fill
+    
+    // Add a border
+    rect.style.stroke = '#4B0082'; // Indigo border
+    rect.style.strokeWidth = '2px';
 
-    if (!isNil(suitabilityScore)) {
-      const color = this.getColor(suitabilityScore);
+    // Add "AI" Text
+    const text = svgCreate('text');
+    svgAppend(text, document.createTextNode('AI'));
+    
+    // Position text in center (approximate)
+    text.setAttribute('x', 45);
+    text.setAttribute('y', 45);
+    text.style.fontSize = '20px';
+    text.style.fontFamily = 'Arial, sans-serif';
+    text.style.fill = '#4B0082';
 
-      const rect = drawRect(parentNode, 50, 20, TASK_BORDER_RADIUS, color);
-
-      svgAttr(rect, {
-        transform: 'translate(-20, -10)'
-      });
-
-      var text = svgCreate('text');
-
-      svgAttr(text, {
-        fill: '#fff',
-        transform: 'translate(-15, 5)'
-      });
-
-      svgClasses(text).add('djs-label');
-
-      svgAppend(text, document.createTextNode(suitabilityScore));
-
-      svgAppend(parentNode, text);
-    }
+    svgAppend(parentNode, text);
 
     return shape;
-  }
-
-  getShapePath(shape) {
-    if (is(shape, 'bpmn:Task')) {
-      return getRoundRectPath(shape, TASK_BORDER_RADIUS);
-    }
-
-    return this.bpmnRenderer.getShapePath(shape);
-  }
-
-  getSuitabilityScore(element) {
-    const businessObject = getBusinessObject(element);
-
-    const { suitable } = businessObject;
-
-    return Number.isFinite(suitable) ? suitable : null;
-  }
-
-  getColor(suitabilityScore) {
-    if (suitabilityScore > 75) {
-      return COLOR_GREEN;
-    } else if (suitabilityScore > 25) {
-      return COLOR_YELLOW;
-    }
-
-    return COLOR_RED;
   }
 }
 
 CustomRenderer.$inject = [ 'eventBus', 'bpmnRenderer' ];
 
-// helpers //////////
-
-// copied from https://github.com/bpmn-io/bpmn-js/blob/master/lib/draw/BpmnRenderer.js
-function drawRect(parentNode, width, height, borderRadius, color) {
+// Helper function to draw the colored rectangle
+function drawRect(parentNode, width, height, borderRadius, fill) {
   const rect = svgCreate('rect');
 
-  svgAttr(rect, {
-    width: width,
-    height: height,
-    rx: borderRadius,
-    ry: borderRadius,
-    stroke: color,
-    strokeWidth: 2,
-    fill: color
-  });
+  rect.setAttribute('width', width);
+  rect.setAttribute('height', height);
+  rect.setAttribute('rx', borderRadius);
+  rect.setAttribute('ry', borderRadius);
+  rect.style.fill = fill;
 
   svgAppend(parentNode, rect);
 

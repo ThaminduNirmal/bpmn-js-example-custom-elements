@@ -1,43 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>bpmn-js-example-model-extension</title>
-
-  <meta charset="utf-8"/>
-
-  <link rel="stylesheet" href="vendor/bpmn-js/assets/diagram-js.css" />
-  <link rel="stylesheet" href="vendor/bpmn-js/assets/bpmn-font/css/bpmn-embedded.css" />
-  <link rel="stylesheet" href="css/app.css" />
+  <title>BPMN AI Editor</title>
+  <link rel="stylesheet" href="https://unpkg.com/bpmn-js@9.0.3/dist/assets/diagram-js.css" />
+  <link rel="stylesheet" href="https://unpkg.com/bpmn-js@9.0.3/dist/assets/bpmn-font/css/bpmn.css" />
+  
+  <style>
+    html, body, #app { height: 100%; margin: 0; padding: 0; }
+    
+    /* Toolbar Styles */
+    .buttons {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      padding: 10px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      z-index: 100;
+    }
+    .buttons button {
+      padding: 8px 15px;
+      margin-right: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #file-input { display: none; } /* Hide the ugly file input */
+  </style>
 </head>
 <body>
-  <div id="container"></div>
+  <div id="app"></div>
 
-  <div id="quality-assurance" class="panel hidden">
-    <form id="form">
-      <p>
-        <b>Suitability Score</b>
-      </p>
-      <br />
-      <input id="suitability-score" type="text" placeholder="100" autocomplete="off">
-      <br />
-      <br />
-      <p id="warning" class="hidden">
-        Suitability Score must be a number
-      </p>
-      <br />
-      <p>
-        <b>Last Checked</b>
-      </p>
-      <br />
-      <p id="last-checked">
-        -
-      </p>
-      <br />
-      <input id="okay" type="submit" value="Okay">
-    </form>
+  <div class="buttons">
+    <button id="btn-open">📂 Open Diagram</button>
+    <button id="btn-download">💾 Download BPMN</button>
+    <input type="file" id="file-input" accept=".bpmn, .xml" />
   </div>
 
-  <div id="hint" class="panel">Click <b>right mouse button</b> to edit properties.</div>
-
   <script src="app.js"></script>
+</body>
 </html>

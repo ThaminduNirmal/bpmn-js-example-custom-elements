@@ -1,147 +1,151 @@
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 
-import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
-
-import diagramXML from '../resources/diagram.bpmn';
-
 import customModule from './custom';
 
-import qaExtension from '../resources/qa';
+import customDescriptor from './custom/custom.json';
 
-const HIGH_PRIORITY = 1500;
 
-const containerEl = document.getElementById('container'),
-      qualityAssuranceEl = document.getElementById('quality-assurance'),
-      suitabilityScoreEl = document.getElementById('suitability-score'),
-      lastCheckedEl = document.getElementById('last-checked'),
-      okayEl = document.getElementById('okay'),
-      formEl = document.getElementById('form'),
-      warningEl = document.getElementById('warning');
 
-// hide quality assurance if user clicks outside
-window.addEventListener('click', (event) => {
-  const { target } = event;
+// 1. Setup the Modeler
 
-  if (target === qualityAssuranceEl || qualityAssuranceEl.contains(target)) {
-    return;
-  }
+var container = document.querySelector('#app');
 
-  qualityAssuranceEl.classList.add('hidden');
-});
+var modeler = new BpmnModeler({
 
-// create modeler
-const bpmnModeler = new BpmnModeler({
-  container: containerEl,
-  additionalModules: [
-    customModule
-  ],
+  container: container,
+
+  keyboard: { bindTo: document },
+
   moddleExtensions: {
-    qa: qaExtension
-  }
+
+    custom: customDescriptor
+
+  },
+
+  additionalModules: [ customModule ]
+
 });
 
-// import XML
-bpmnModeler.importXML(diagramXML).then(() => {
 
-  const moddle = bpmnModeler.get('moddle'),
-        modeling = bpmnModeler.get('modeling');
 
-  let analysisDetails,
-      businessObject,
-      element,
-      suitabilityScore;
+// 2. Default "Start" Diagram (Just so it's not empty)
 
-  // validate suitability score
-  function validate() {
-    const { value } = suitabilityScoreEl;
+const defaultXML = `<?xml version="1.0" encoding="UTF-8"?>
 
-    if (isNaN(value)) {
-      warningEl.classList.remove('hidden');
-      okayEl.disabled = true;
-    } else {
-      warningEl.classList.add('hidden');
-      okayEl.disabled = false;
-    }
-  }
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
 
-  // open quality assurance if user right clicks on element
-  bpmnModeler.on('element.contextmenu', HIGH_PRIORITY, (event) => {
-    event.originalEvent.preventDefault();
-    event.originalEvent.stopPropagation();
+  <bpmn2:process id="Process_1" isExecutable="false">
 
-    qualityAssuranceEl.classList.remove('hidden');
+    <bpmn2:startEvent id="StartEvent_1"/>
 
-    ({ element } = event);
+  </bpmn2:process>
 
-    // ignore root element
-    if (!element.parent) {
-      return;
-    }
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
 
-    businessObject = getBusinessObject(element);
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
 
-    let { suitable } = businessObject;
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
 
-    suitabilityScoreEl.value = suitable ? suitable : '';
+        <dc:Bounds x="412" y="240" width="36" height="36"/>
 
-    suitabilityScoreEl.focus();
+      </bpmndi:BPMNShape>
 
-    analysisDetails = getExtensionElement(businessObject, 'qa:AnalysisDetails');
+    </bpmndi:BPMNPlane>
 
-    lastCheckedEl.textContent = analysisDetails ? analysisDetails.lastChecked : '-';
+  </bpmndi:BPMNDiagram>
 
-    validate();
+</bpmn2:definitions>`;
+
+
+
+openDiagram(defaultXML);
+
+
+
+// --- FUNCTIONS ---
+
+
+
+// Function to load XML into the editor
+
+function openDiagram(xml) {
+
+  modeler.importXML(xml).then(function() {
+
+    modeler.get('canvas').zoom('fit-viewport');
+
+  }).catch(function(err) {
+
+    console.error('Error loading diagram', err);
+
   });
 
-  // set suitability core and last checked if user submits
-  formEl.addEventListener('submit', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    suitabilityScore = Number(suitabilityScoreEl.value);
-
-    if (isNaN(suitabilityScore)) {
-      return;
-    }
-
-    const extensionElements = businessObject.extensionElements || moddle.create('bpmn:ExtensionElements');
-
-    if (!analysisDetails) {
-      analysisDetails = moddle.create('qa:AnalysisDetails');
-
-      extensionElements.get('values').push(analysisDetails);
-    }
-
-    analysisDetails.lastChecked = new Date().toISOString();
-
-    modeling.updateProperties(element, {
-      extensionElements,
-      suitable: suitabilityScore
-    });
-
-    qualityAssuranceEl.classList.add('hidden');
-  });
-
-  // close quality assurance if user presses escape
-  formEl.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      qualityAssuranceEl.classList.add('hidden');
-    }
-  });
-
-  // validate suitability score if user inputs value
-  suitabilityScoreEl.addEventListener('input', validate);
-
-}).catch((err) => {
-  console.error(err);
-});
-
-function getExtensionElement(element, type) {
-  if (!element.extensionElements) {
-    return;
-  }
-
-  return element.extensionElements.values.filter((extensionElement) => {
-    return extensionElement.$instanceOf(type);
-  })[0];
 }
+
+
+
+// 3. "DOWNLOAD" LOGIC
+
+document.querySelector('#btn-download').addEventListener('click', function() {
+
+  modeler.saveXML({ format: true }).then(function(result) {
+
+    // Create a fake link to trigger download
+
+    const link = document.createElement('a');
+
+    link.href = 'data:application/bpmn20-xml;charset=UTF-8,' + encodeURIComponent(result.xml);
+
+    link.download = 'diagram.bpmn';
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+  }).catch(function(err) {
+
+    console.error('Error saving diagram', err);
+
+  });
+
+});
+
+
+
+// 4. "OPEN" LOGIC
+
+// When clicking "Open", actually click the hidden file input
+
+document.querySelector('#btn-open').addEventListener('click', function() {
+
+  document.querySelector('#file-input').click();
+
+});
+
+
+
+// When a file is selected, read it
+
+document.querySelector('#file-input').addEventListener('change', function(e) {
+
+  const file = e.target.files[0];
+
+  if (!file) return;
+
+
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+
+    const xml = e.target.result;
+
+    openDiagram(xml); // Load the new file!
+
+  };
+
+  reader.readAsText(file);
+
+});

@@ -25,5 +25,10 @@ module.exports = {
     })
   ],
   mode: 'development',
-  devtool: 'source-map'
+  devtool: 'source-map',
+  performance: {
+    hints: false,             // Set to false to hide all size warnings
+    maxEntrypointSize: 512000, // or increase limit (512 KB)
+    maxAssetSize: 512000       // or increase limit (512 KB)
+  }
 };
